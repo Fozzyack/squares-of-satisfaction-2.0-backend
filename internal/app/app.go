@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Fozzyack/habit-tracker/database"
+	"github.com/Fozzyack/habit-tracker/internal/api"
 	"github.com/Fozzyack/habit-tracker/internal/env"
 	"github.com/Fozzyack/habit-tracker/internal/services"
 	"github.com/Fozzyack/habit-tracker/internal/store"
@@ -13,8 +14,9 @@ import (
 )
 
 type Application struct {
-	Logger zerolog.Logger
-	DB     *sql.DB
+	Logger      zerolog.Logger
+	DB          *sql.DB
+	UserHandler api.UserHandler
 }
 
 func NewApplication() (*Application, error) {
@@ -42,10 +44,12 @@ func NewApplication() (*Application, error) {
 	authService := services.NewAuthService(txManager, userStore, sessionStore)
 
 	// handler init
+	userHandler := api.NewUserHandler(authService, logger)
 
 	app := &Application{
-		Logger: logger,
-		DB:     pgDB,
+		Logger:      logger,
+		DB:          pgDB,
+		UserHandler: *userHandler,
 	}
 
 	return app, nil

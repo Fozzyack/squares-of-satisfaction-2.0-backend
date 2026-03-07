@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/Fozzyack/habit-tracker/internal/auth"
 	"github.com/Fozzyack/habit-tracker/internal/models"
-	ses "github.com/Fozzyack/habit-tracker/internal/session"
 	"github.com/Fozzyack/habit-tracker/internal/store"
 )
 
@@ -28,14 +28,18 @@ func (as *AuthService) CreateNewUser(ctx context.Context, userReq *models.NewUse
 
 	var user *models.User
 	var session *models.Session
-	token, err := ses.GenerateToken()
+	token, err := auth.GenerateToken()
+	if err != nil {
+		return nil, nil, err
+	}
+	password, err := auth.HashPassword(userReq.Password)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	err = as.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
 		var err error
-		user, err = as.UserStore.CreateUser(ctx, tx, "", userReq)
+		user, err = as.UserStore.CreateUser(ctx, tx, password, userReq)
 		if err != nil {
 			return err
 		}
