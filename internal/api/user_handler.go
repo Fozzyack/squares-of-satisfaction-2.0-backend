@@ -21,6 +21,19 @@ func NewUserHandler(authService *services.AuthService, logger zerolog.Logger) *U
 	}
 }
 
+func (uh *UserHandler) HandleGetUserBySession(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	user, err := uh.AuthService.UserStore.GetUserById(session.UserId)
+	if err != nil {
+		uh.Logger.Error().Err(err).Msg("HandleGetUserBySession")
+		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, map[string]string{"name": user.Name, "email": user.Email})
+}
+
 func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var userReq *models.NewUserRequest
