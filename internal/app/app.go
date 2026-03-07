@@ -3,7 +3,7 @@ package app
 import (
 	"os"
 
-	envutils "github.com/Fozzyack/habit-tracker/internal/utils/env_utils"
+	"github.com/Fozzyack/habit-tracker/internal/env"
 	"github.com/rs/zerolog"
 )
 
@@ -13,7 +13,7 @@ type Application struct {
 
 func NewApplication() (*Application, error) {
 	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
-	if !envutils.GetProduction() {
+	if !env.GetProduction() {
 		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 	}
 

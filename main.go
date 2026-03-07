@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Fozzyack/habit-tracker/internal/app"
+	"github.com/Fozzyack/habit-tracker/internal/env"
 	"github.com/Fozzyack/habit-tracker/internal/routes"
-	envutils "github.com/Fozzyack/habit-tracker/internal/utils/env_utils"
 	"github.com/joho/godotenv"
 )
 
@@ -28,11 +28,11 @@ func main() {
 		log.Fatalf("Could not start app: %v", err)
 	}
 	app.Logger.Info().Msg("App Initialized")
-	env := "DEVELOPMENT"
-	if envutils.GetProduction() {
-		env = "PRODUCTION"
+	environment := "DEVELOPMENT"
+	if env.GetProduction() {
+		environment = "PRODUCTION"
 	}
-	app.Logger.Info().Str("Env", fmt.Sprintf(env)).Msg("Env")
+	app.Logger.Info().Str("Env", fmt.Sprintf(environment)).Msg("Env")
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
