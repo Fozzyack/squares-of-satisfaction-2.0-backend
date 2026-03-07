@@ -1,0 +1,3 @@
+# Ignoring env files (except example)
+.env*
+!.env.example
