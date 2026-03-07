@@ -7,9 +7,9 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=habbittracker
     ports:
-      -"5499:5432"
+      - 5499:5432
     volumes:
-      -habbit_tracker:"/var/lib/postgresql"
+      - habbit_tracker:/var/lib/postgresql
 
 volumes:
   habbit_tracker:
