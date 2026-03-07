@@ -6,6 +6,7 @@ import (
 
 	"github.com/Fozzyack/habit-tracker/database"
 	"github.com/Fozzyack/habit-tracker/internal/env"
+	"github.com/Fozzyack/habit-tracker/internal/services"
 	"github.com/Fozzyack/habit-tracker/internal/store"
 	"github.com/Fozzyack/habit-tracker/migrations"
 	"github.com/rs/zerolog"
@@ -35,6 +36,12 @@ func NewApplication() (*Application, error) {
 	// store init
 	userStore := store.NewUserStore(pgDB)
 	sessionStore := store.NewSessionStore(pgDB)
+
+	// services init
+	txManager := services.NewSQLTxManager(pgDB)
+	authService := services.NewAuthService(txManager, userStore, sessionStore)
+
+	// handler init
 
 	app := &Application{
 		Logger: logger,
