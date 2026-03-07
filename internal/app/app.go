@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/Fozzyack/habit-tracker/internal/database"
+	"github.com/Fozzyack/habit-tracker/database"
 	"github.com/Fozzyack/habit-tracker/internal/env"
+	"github.com/Fozzyack/habit-tracker/migrations"
 	"github.com/rs/zerolog"
 )
 
@@ -21,6 +22,11 @@ func NewApplication() (*Application, error) {
 	}
 
 	pgDB, err := database.Open()
+	if err != nil {
+		return nil, err
+	}
+
+	err = database.MigrateFS(pgDB, migrations.FS, ".")
 	if err != nil {
 		return nil, err
 	}

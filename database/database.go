@@ -17,7 +17,7 @@ func Open() (*sql.DB, error) {
 	}
 
 	db, err := sql.Open("pgx", connStr)
-	if  err != nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -40,12 +40,10 @@ func Migrate(db *sql.DB, dir string) error {
 		return fmt.Errorf("Goose Dialect set: %w", err)
 	}
 
-	err = goose.Up("postgres")
+	err = goose.Up(db, dir)
 	if err != nil {
 		return fmt.Errorf("Goose up: %w", err)
 	}
 	return nil
-
-
 
 }

@@ -10,7 +10,8 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- +goose StatementEnd
--- +goose Up
+
+-- +goose Down
 -- +goose StatementBegin
 DROP TABLE users; 
 -- +goose StatementEnd
