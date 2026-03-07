@@ -23,7 +23,7 @@ func NewUserHandler(authService *services.AuthService, logger zerolog.Logger) *U
 func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var userReq *models.NewUserRequest
-	err := DecodeJSON(r, userReq)
+	err := DecodeJSON(r, &userReq)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - Could not decode body")
 		ErrorJSON(w, "Error: Could not Create User", http.StatusBadRequest)

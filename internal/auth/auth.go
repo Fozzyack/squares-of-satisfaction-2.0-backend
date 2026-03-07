@@ -19,7 +19,7 @@ func HashPassword(password string) (string, error) {
 }
 
 func GenerateToken() (string, error) {
-	token := make([]byte, 60)
+	token := make([]byte, 64)
 	_, err := rand.Read(token)
 	if err != nil {
 		return "", err

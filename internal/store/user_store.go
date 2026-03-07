@@ -18,7 +18,7 @@ func NewUserStore(db *sql.DB) UserStore {
 
 func (ps *PostgresStore) CreateUser(ctx context.Context, tx *sql.Tx, passwordHash string, userReq *models.NewUserRequest) (*models.User, error) {
 	query := `
-	INSERT into users (name, email, passwordHash)
+	INSERT into users (name, email, password_hash)
 	VALUES ($1, $2, $3)
 	RETURNING id, email, password_hash, name, created_at, updated_at
 	`

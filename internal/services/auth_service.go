@@ -28,6 +28,7 @@ func (as *AuthService) CreateNewUser(ctx context.Context, userReq *models.NewUse
 
 	var user *models.User
 	var session *models.Session
+
 	token, err := auth.GenerateToken()
 	if err != nil {
 		return nil, nil, err
