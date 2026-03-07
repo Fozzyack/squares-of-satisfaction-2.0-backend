@@ -3,6 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/Fozzyack/habit-tracker/internal/env"
 )
 
 func SendJSON(w http.ResponseWriter, payload interface{}) {
@@ -22,4 +25,19 @@ func DecodeJSON(r *http.Request, out interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func CreateCookie(value string, expires_at time.Time) *http.Cookie {
+	cookie := &http.Cookie{
+		Name:     "habbit-tracker",
+		Value:    value,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  expires_at,
+	}
+	if env.GetProduction() {
+		cookie.Secure = true
+	}
+	return cookie
+
 }

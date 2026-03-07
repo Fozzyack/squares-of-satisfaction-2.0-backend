@@ -27,3 +27,7 @@ func GenerateToken() (string, error) {
 	return hex.EncodeToString(token), nil
 
 }
+
+func VerifyPassword(passwordHash, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+}

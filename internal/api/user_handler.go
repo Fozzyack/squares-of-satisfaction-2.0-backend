@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Fozzyack/habit-tracker/internal/models"
@@ -37,5 +38,31 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	SendJSON(w, map[string]string{"token": session.Token})
+	http.SetCookie(w, CreateCookie(session.Token, session.ExpiresAt))
+	SendJSON(w, map[string]string{"msg": "success"})
+}
+
+func (uh *UserHandler) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var loginReq *models.LoginUserRequest
+	err := DecodeJSON(r, &loginReq)
+	if err != nil {
+		uh.Logger.Error().Err(err).Msg("HandleLoginUser - Could not decode body")
+		ErrorJSON(w, "Error: Could not Login User", http.StatusBadRequest)
+		return
+	}
+
+	session, err := uh.AuthService.LoginUser(ctx, loginReq)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			ErrorJSON(w, "Error: Invalid credentials", http.StatusUnauthorized)
+			return
+		}
+		uh.Logger.Error().Err(err).Msg("HandleLoginUser - Could not login user")
+		ErrorJSON(w, "Error: Could not Login User", http.StatusBadRequest)
+		return
+	}
+
+	http.SetCookie(w, CreateCookie(session.Token, session.ExpiresAt))
+	SendJSON(w, map[string]string{"msg": "success"})
 }
