@@ -36,6 +36,7 @@ func CreateCookie(value string, expires_at time.Time) (*http.Cookie, error) {
 		Name:     cookieName,
 		Value:    value,
 		Secure:   false,
+		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 		Expires:  expires_at,
 	}

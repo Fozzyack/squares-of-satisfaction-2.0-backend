@@ -28,20 +28,15 @@ func CheckSession(app *app.Application) func(next http.Handler) http.Handler {
 				return
 			}
 
-			if cookie.Expires.UTC().After(time.Now()) {
-				app.Logger.Error().Err(err).Msg("Check Session: Cookie Expired")
-				api.ErrorJSON(w, "Error: Unauthorized", http.StatusUnauthorized)
-				return
-			}
-
 			session, err := app.SessionStore.GetSessionByToken(cookie.Value)
 			if err != nil {
 				app.Logger.Error().Err(err).Msg("Check Session: Session not found")
 				api.ErrorJSON(w, "Error: Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			if session.ExpiresAt.UTC().After(time.Now()) {
-				app.Logger.Error().Err(err).Msg("Check Session: Session Expired")
+
+			if session.ExpiresAt.UTC().Before(time.Now().UTC()) {
+				app.Logger.Error().Msg("Check Session: Session Expired")
 				api.ErrorJSON(w, "Error: Unauthorized", http.StatusUnauthorized)
 				return
 			}
