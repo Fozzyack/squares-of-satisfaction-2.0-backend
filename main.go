@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Fozzyack/habit-tracker/internal/app"
+	"github.com/Fozzyack/habit-tracker/internal/routes"
 	envutils "github.com/Fozzyack/habit-tracker/internal/utils/env_utils"
 	"github.com/joho/godotenv"
 )
@@ -35,6 +36,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
+		Handler:      routes.SetupRoutes(app),
 		ReadTimeout:  time.Second * 30,
 		WriteTimeout: time.Second * 30,
 		IdleTimeout:  time.Minute * 5,
