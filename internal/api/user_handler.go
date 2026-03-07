@@ -34,11 +34,17 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	_, session, err := uh.AuthService.CreateNewUser(ctx, userReq)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - Could not create user / session")
-		ErrorJSON(w, "Error: Could not Create User", http.StatusBadRequest)
+		ErrorJSON(w, "Error: Could not Create User", http.StatusInternalServerError)
 		return
 	}
 
-	http.SetCookie(w, CreateCookie(session.Token, session.ExpiresAt))
+	cookie, err := CreateCookie(session.Token, session.ExpiresAt)
+	if err != nil {
+		uh.Logger.Error().Err(err).Msg("HandleCreateUser - cookie name")
+		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, cookie)
 	SendJSON(w, map[string]string{"msg": "success"})
 }
 
@@ -63,6 +69,13 @@ func (uh *UserHandler) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, CreateCookie(session.Token, session.ExpiresAt))
+	cookie, err := CreateCookie(session.Token, session.ExpiresAt)
+	if err != nil {
+		uh.Logger.Error().Err(err).Msg("HandleCreateUser - cookie name")
+		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, cookie)
+
 	SendJSON(w, map[string]string{"msg": "success"})
 }
