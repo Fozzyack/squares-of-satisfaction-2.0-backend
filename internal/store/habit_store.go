@@ -1,0 +1,110 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+
+	"github.com/Fozzyack/habit-tracker/internal/models"
+)
+
+type HabitStore interface {
+	CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error)
+	GetHabitById(id string) (*models.Habit, error)
+	GetHabitsByUserId(userId string) ([]*models.Habit, error)
+}
+
+func NewHabitStore(db *sql.DB) HabitStore {
+	return &PostgresStore{db: db}
+}
+
+func (ps *PostgresStore) CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error) {
+	query := `
+	INSERT INTO habits (user_id, name, goal, increment, color)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id, user_id, name, goal, increment, color, created_at, updated_at
+	`
+
+	newHabit := &models.Habit{}
+	err := tx.QueryRowContext(ctx, query, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color).Scan(
+		&newHabit.Id,
+		&newHabit.UserId,
+		&newHabit.Name,
+		&newHabit.Goal,
+		&newHabit.Increment,
+		&newHabit.Color,
+		&newHabit.CreatedAt,
+		&newHabit.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return newHabit, nil
+}
+
+func (ps *PostgresStore) GetHabitById(id string) (*models.Habit, error) {
+	query := `
+	SELECT id, user_id, name, goal, increment, color, created_at, updated_at
+	FROM habits
+	WHERE id = $1
+	`
+
+	habit := &models.Habit{}
+	err := ps.db.QueryRow(query, id).Scan(
+		&habit.Id,
+		&habit.UserId,
+		&habit.Name,
+		&habit.Goal,
+		&habit.Increment,
+		&habit.Color,
+		&habit.CreatedAt,
+		&habit.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return habit, nil
+}
+
+func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, error) {
+	query := `
+	SELECT id, user_id, name, goal, increment, color, created_at, updated_at
+	FROM habits
+	WHERE user_id = $1
+	ORDER BY created_at DESC
+	`
+
+	rows, err := ps.db.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	habits := make([]*models.Habit, 0)
+	for rows.Next() {
+		habit := &models.Habit{}
+		err = rows.Scan(
+			&habit.Id,
+			&habit.UserId,
+			&habit.Name,
+			&habit.Goal,
+			&habit.Increment,
+			&habit.Color,
+			&habit.CreatedAt,
+			&habit.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		habits = append(habits, habit)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return habits, nil
+}
