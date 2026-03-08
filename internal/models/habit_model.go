@@ -9,6 +9,7 @@ type Habit struct {
 	Goal      int       `json:"goal"`
 	Increment int       `json:"increment"`
 	Color     *string   `json:"color"`
+	Unit      *string   `json:"unit"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -18,6 +19,7 @@ type NewHabitRequest struct {
 	Goal      int     `json:"goal"`
 	Increment int     `json:"increment"`
 	Color     *string `json:"color"`
+	Unit      *string `json:"unit"`
 }
 
 type UpdateHabitRequest struct {
@@ -25,4 +27,5 @@ type UpdateHabitRequest struct {
 	Goal      *int    `json:"goal"`
 	Increment *int    `json:"increment"`
 	Color     *string `json:"color"`
+	Unit      *string `json:"unit"`
 }

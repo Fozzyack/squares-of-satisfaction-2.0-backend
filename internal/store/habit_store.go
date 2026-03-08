@@ -9,7 +9,7 @@ import (
 
 type HabitStore interface {
 	CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error)
-	GetHabitById(id string) (*models.Habit, error)
+	GetHabitById(id, userId string) (*models.Habit, error)
 	GetHabitsByUserId(userId string) ([]*models.Habit, error)
 	UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error)
 }
@@ -20,19 +20,20 @@ func NewHabitStore(db *sql.DB) HabitStore {
 
 func (ps *PostgresStore) CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error) {
 	query := `
-	INSERT INTO habits (user_id, name, goal, increment, color)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, user_id, name, goal, increment, color, created_at, updated_at
+	INSERT INTO habits (user_id, name, goal, increment, color, unit)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	`
 
 	newHabit := &models.Habit{}
-	err := tx.QueryRowContext(ctx, query, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color).Scan(
+	err := tx.QueryRowContext(ctx, query, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color, habitReq.Unit).Scan(
 		&newHabit.Id,
 		&newHabit.UserId,
 		&newHabit.Name,
 		&newHabit.Goal,
 		&newHabit.Increment,
 		&newHabit.Color,
+		&newHabit.Unit,
 		&newHabit.CreatedAt,
 		&newHabit.UpdatedAt,
 	)
@@ -43,21 +44,22 @@ func (ps *PostgresStore) CreateHabit(ctx context.Context, tx *sql.Tx, userId str
 	return newHabit, nil
 }
 
-func (ps *PostgresStore) GetHabitById(id string) (*models.Habit, error) {
+func (ps *PostgresStore) GetHabitById(id, userId string) (*models.Habit, error) {
 	query := `
-	SELECT id, user_id, name, goal, increment, color, created_at, updated_at
+	SELECT id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	FROM habits
-	WHERE id = $1
+	WHERE id = $1 AND user_id = $2
 	`
 
 	habit := &models.Habit{}
-	err := ps.db.QueryRow(query, id).Scan(
+	err := ps.db.QueryRow(query, id, userId).Scan(
 		&habit.Id,
 		&habit.UserId,
 		&habit.Name,
 		&habit.Goal,
 		&habit.Increment,
 		&habit.Color,
+		&habit.Unit,
 		&habit.CreatedAt,
 		&habit.UpdatedAt,
 	)
@@ -70,7 +72,7 @@ func (ps *PostgresStore) GetHabitById(id string) (*models.Habit, error) {
 
 func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, error) {
 	query := `
-	SELECT id, user_id, name, goal, increment, color, created_at, updated_at
+	SELECT id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	FROM habits
 	WHERE user_id = $1
 	ORDER BY created_at DESC
@@ -92,6 +94,7 @@ func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, erro
 			&habit.Goal,
 			&habit.Increment,
 			&habit.Color,
+			&habit.Unit,
 			&habit.CreatedAt,
 			&habit.UpdatedAt,
 		)
@@ -118,19 +121,21 @@ func (ps *PostgresStore) UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId
 		goal = COALESCE($4, goal),
 		increment = COALESCE($5, increment),
 		color = COALESCE($6, color),
+		unit = COALESCE($7, unit),
 		updated_at = NOW()
 	WHERE id = $1 AND user_id = $2
-	RETURNING id, user_id, name, goal, increment, color, created_at, updated_at
+	RETURNING id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	`
 
 	habit := &models.Habit{}
-	err := tx.QueryRowContext(ctx, query, id, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color).Scan(
+	err := tx.QueryRowContext(ctx, query, id, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color, habitReq.Unit).Scan(
 		&habit.Id,
 		&habit.UserId,
 		&habit.Name,
 		&habit.Goal,
 		&habit.Increment,
 		&habit.Color,
+		&habit.Unit,
 		&habit.CreatedAt,
 		&habit.UpdatedAt,
 	)

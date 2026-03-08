@@ -42,8 +42,8 @@ func (hs *HabitService) CreateHabit(ctx context.Context, userId string, habitReq
 	return habit, nil
 }
 
-func (hs *HabitService) GetHabitById(id string) (*models.Habit, error) {
-	habit, err := hs.HabitStore.GetHabitById(id)
+func (hs *HabitService) GetHabitById(id, userId string) (*models.Habit, error) {
+	habit, err := hs.HabitStore.GetHabitById(id, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -67,4 +67,13 @@ func (hs *HabitService) UpdateHabit(ctx context.Context, id, userId string, habi
 	}
 
 	return habit, nil
+}
+
+func (hs *HabitService) GetHabitsByUserId(userId string) ([]*models.Habit, error) {
+	habits, err := hs.HabitStore.GetHabitsByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return habits, nil
 }

@@ -45,10 +45,26 @@ func (hh *HabitHandler) HandleCreateHabit(w http.ResponseWriter, r *http.Request
 	SendJSON(w, habit)
 }
 
+func (hh *HabitHandler) HandleGetHabitsBySession(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+
+	habits, err := hh.HabitService.GetHabitsByUserId(session.UserId)
+	if err != nil {
+		hh.Logger.Error().Err(err).Msg("HandleGetHabitsBySession")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, habits)
+}
+
 func (hh *HabitHandler) HandleGetHabitById(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
 	habitId := chi.URLParam(r, "habitId")
 
-	habit, err := hh.HabitService.GetHabitById(habitId)
+	habit, err := hh.HabitService.GetHabitById(habitId, session.UserId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ErrorJSON(w, "Habit Not Found", http.StatusNotFound)
