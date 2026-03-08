@@ -27,7 +27,7 @@ func (uh *UserHandler) HandleGetUserBySession(w http.ResponseWriter, r *http.Req
 	user, err := uh.AuthService.UserStore.GetUserById(session.UserId)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleGetUserBySession")
-		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -40,21 +40,21 @@ func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	err := DecodeJSON(r, &userReq)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - Could not decode body")
-		ErrorJSON(w, "Error: Could not Create User", http.StatusBadRequest)
+		ErrorJSON(w, "Could not Create User (Bad Request)", http.StatusBadRequest)
 		return
 	}
 
 	_, session, err := uh.AuthService.CreateNewUser(ctx, userReq)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - Could not create user / session")
-		ErrorJSON(w, "Error: Could not Create User", http.StatusInternalServerError)
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	cookie, err := CreateCookie(session.Token, session.ExpiresAt)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - cookie name")
-		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	http.SetCookie(w, cookie)
@@ -67,25 +67,25 @@ func (uh *UserHandler) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	err := DecodeJSON(r, &loginReq)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleLoginUser - Could not decode body")
-		ErrorJSON(w, "Error: Could not Login User", http.StatusBadRequest)
+		ErrorJSON(w, "Could not Login User (Bad Request)", http.StatusBadRequest)
 		return
 	}
 
 	session, err := uh.AuthService.LoginUser(ctx, loginReq)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidCredentials) {
-			ErrorJSON(w, "Error: Invalid credentials", http.StatusUnauthorized)
+			ErrorJSON(w, "Incorrect Email or Password", http.StatusUnauthorized)
 			return
 		}
 		uh.Logger.Error().Err(err).Msg("HandleLoginUser - Could not login user")
-		ErrorJSON(w, "Error: Could not Login User", http.StatusBadRequest)
+		ErrorJSON(w, "Could not Login User (Bad Request)", http.StatusBadRequest)
 		return
 	}
 
 	cookie, err := CreateCookie(session.Token, session.ExpiresAt)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleCreateUser - cookie name")
-		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	http.SetCookie(w, cookie)
