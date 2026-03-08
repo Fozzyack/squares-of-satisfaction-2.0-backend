@@ -17,6 +17,7 @@ type Application struct {
 	Logger       zerolog.Logger
 	DB           *sql.DB
 	UserHandler  *api.UserHandler
+	HabitHandler *api.HabitHandler
 	HabitService *services.HabitService
 	SessionStore store.SessionStore
 }
@@ -49,11 +50,13 @@ func NewApplication() (*Application, error) {
 
 	// handler init
 	userHandler := api.NewUserHandler(authService, logger)
+	habitHandler := api.NewHabitHandler(habitService, logger)
 
 	app := &Application{
 		Logger:       logger,
 		DB:           pgDB,
 		UserHandler:  userHandler,
+		HabitHandler: habitHandler,
 		HabitService: habitService,
 		SessionStore: sessionStore,
 	}
