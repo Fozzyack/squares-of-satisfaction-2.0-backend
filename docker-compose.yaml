@@ -5,7 +5,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=habbittracker
+      - POSTGRES_DB=squares
     ports:
       - 5499:5432
     volumes:
