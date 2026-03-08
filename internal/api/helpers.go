@@ -27,17 +27,22 @@ func DecodeJSON(r *http.Request, out interface{}) error {
 	return nil
 }
 
-func CreateCookie(value string, expires_at time.Time) *http.Cookie {
+func CreateCookie(value string, expires_at time.Time) (*http.Cookie, error) {
+	cookieName, err := env.GetCookieName()
+	if err != nil {
+		return nil, err
+	}
 	cookie := &http.Cookie{
-		Name:     "habbit-tracker",
+		Name:     cookieName,
 		Value:    value,
 		Secure:   false,
+		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 		Expires:  expires_at,
 	}
 	if env.GetProduction() {
 		cookie.Secure = true
 	}
-	return cookie
+	return cookie, nil
 
 }

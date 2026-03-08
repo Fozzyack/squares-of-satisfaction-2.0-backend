@@ -14,9 +14,10 @@ import (
 )
 
 type Application struct {
-	Logger      zerolog.Logger
-	DB          *sql.DB
-	UserHandler api.UserHandler
+	Logger       zerolog.Logger
+	DB           *sql.DB
+	UserHandler  *api.UserHandler
+	SessionStore store.SessionStore
 }
 
 func NewApplication() (*Application, error) {
@@ -47,9 +48,10 @@ func NewApplication() (*Application, error) {
 	userHandler := api.NewUserHandler(authService, logger)
 
 	app := &Application{
-		Logger:      logger,
-		DB:          pgDB,
-		UserHandler: *userHandler,
+		Logger:       logger,
+		DB:           pgDB,
+		UserHandler:  userHandler,
+		SessionStore: sessionStore,
 	}
 
 	return app, nil
