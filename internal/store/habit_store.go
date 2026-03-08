@@ -11,6 +11,7 @@ type HabitStore interface {
 	CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error)
 	GetHabitById(id string) (*models.Habit, error)
 	GetHabitsByUserId(userId string) ([]*models.Habit, error)
+	UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error)
 }
 
 func NewHabitStore(db *sql.DB) HabitStore {
@@ -107,4 +108,35 @@ func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, erro
 	}
 
 	return habits, nil
+}
+
+func (ps *PostgresStore) UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error) {
+	query := `
+	UPDATE habits
+	SET
+		name = COALESCE($3, name),
+		goal = COALESCE($4, goal),
+		increment = COALESCE($5, increment),
+		color = COALESCE($6, color),
+		updated_at = NOW()
+	WHERE id = $1 AND user_id = $2
+	RETURNING id, user_id, name, goal, increment, color, created_at, updated_at
+	`
+
+	habit := &models.Habit{}
+	err := tx.QueryRowContext(ctx, query, id, userId, habitReq.Name, habitReq.Goal, habitReq.Increment, habitReq.Color).Scan(
+		&habit.Id,
+		&habit.UserId,
+		&habit.Name,
+		&habit.Goal,
+		&habit.Increment,
+		&habit.Color,
+		&habit.CreatedAt,
+		&habit.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return habit, nil
 }

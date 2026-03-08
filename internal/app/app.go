@@ -17,6 +17,7 @@ type Application struct {
 	Logger       zerolog.Logger
 	DB           *sql.DB
 	UserHandler  *api.UserHandler
+	HabitService *services.HabitService
 	SessionStore store.SessionStore
 }
 
@@ -39,10 +40,12 @@ func NewApplication() (*Application, error) {
 	// store init
 	userStore := store.NewUserStore(pgDB)
 	sessionStore := store.NewSessionStore(pgDB)
+	habitStore := store.NewHabitStore(pgDB)
 
 	// services init
 	txManager := services.NewSQLTxManager(pgDB)
 	authService := services.NewAuthService(txManager, userStore, sessionStore)
+	habitService := services.NewHabitService(txManager, habitStore)
 
 	// handler init
 	userHandler := api.NewUserHandler(authService, logger)
@@ -51,6 +54,7 @@ func NewApplication() (*Application, error) {
 		Logger:       logger,
 		DB:           pgDB,
 		UserHandler:  userHandler,
+		HabitService: habitService,
 		SessionStore: sessionStore,
 	}
 

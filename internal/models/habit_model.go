@@ -19,3 +19,10 @@ type NewHabitRequest struct {
 	Increment int     `json:"increment"`
 	Color     *string `json:"color"`
 }
+
+type UpdateHabitRequest struct {
+	Name      *string `json:"name"`
+	Goal      *int    `json:"goal"`
+	Increment *int    `json:"increment"`
+	Color     *string `json:"color"`
+}
