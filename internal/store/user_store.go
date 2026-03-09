@@ -9,8 +9,10 @@ import (
 
 type UserStore interface {
 	CreateUser(ctx context.Context, tx *sql.Tx, passwordHash string, userReq *models.NewUserRequest) (*models.User, error)
-	GetUserById(id string) (*models.User, error)
-	GetUserByEmail(email string) (*models.User, error)
+	GetUserById(ctx context.Context, id string) (*models.User, error)
+	GetUserByIdTx(ctx context.Context, tx *sql.Tx, id string) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserByEmailTx(ctx context.Context, tx *sql.Tx, email string) (*models.User, error)
 }
 
 func NewUserStore(db *sql.DB) UserStore {
@@ -40,7 +42,7 @@ func (ps *PostgresStore) CreateUser(ctx context.Context, tx *sql.Tx, passwordHas
 	return newUser, nil
 }
 
-func (ps *PostgresStore) GetUserById(id string) (*models.User, error) {
+func (ps *PostgresStore) getUserById(ctx context.Context, q queryRower, id string) (*models.User, error) {
 	query := `
 	SELECT id, email, password_hash, name, created_at, updated_at
 	FROM users
@@ -48,7 +50,7 @@ func (ps *PostgresStore) GetUserById(id string) (*models.User, error) {
 	`
 
 	user := &models.User{}
-	err := ps.db.QueryRow(query, id).Scan(
+	err := q.QueryRowContext(ctx, query, id).Scan(
 		&user.Id,
 		&user.Email,
 		&user.PasswordHash,
@@ -63,7 +65,15 @@ func (ps *PostgresStore) GetUserById(id string) (*models.User, error) {
 	return user, nil
 }
 
-func (ps *PostgresStore) GetUserByEmail(email string) (*models.User, error) {
+func (ps *PostgresStore) GetUserById(ctx context.Context, id string) (*models.User, error) {
+	return ps.getUserById(ctx, ps.db, id)
+}
+
+func (ps *PostgresStore) GetUserByIdTx(ctx context.Context, tx *sql.Tx, id string) (*models.User, error) {
+	return ps.getUserById(ctx, tx, id)
+}
+
+func (ps *PostgresStore) getUserByEmail(ctx context.Context, q queryRower, email string) (*models.User, error) {
 	query := `
 	SELECT id, email, password_hash, name, created_at, updated_at
 	FROM users
@@ -71,7 +81,7 @@ func (ps *PostgresStore) GetUserByEmail(email string) (*models.User, error) {
 	`
 
 	user := &models.User{}
-	err := ps.db.QueryRow(query, email).Scan(
+	err := q.QueryRowContext(ctx, query, email).Scan(
 		&user.Id,
 		&user.Email,
 		&user.PasswordHash,
@@ -84,4 +94,12 @@ func (ps *PostgresStore) GetUserByEmail(email string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (ps *PostgresStore) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return ps.getUserByEmail(ctx, ps.db, email)
+}
+
+func (ps *PostgresStore) GetUserByEmailTx(ctx context.Context, tx *sql.Tx, email string) (*models.User, error) {
+	return ps.getUserByEmail(ctx, tx, email)
 }

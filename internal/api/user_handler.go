@@ -24,7 +24,7 @@ func NewUserHandler(authService *services.AuthService, logger zerolog.Logger) *U
 func (uh *UserHandler) HandleGetUserBySession(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value("session").(*models.Session)
-	user, err := uh.AuthService.UserStore.GetUserById(session.UserId)
+	user, err := uh.AuthService.UserStore.GetUserById(ctx, session.UserId)
 	if err != nil {
 		uh.Logger.Error().Err(err).Msg("HandleGetUserBySession")
 		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)

@@ -5,11 +5,14 @@ import (
 	"database/sql"
 )
 
-
 type PostgresStore struct {
 	db *sql.DB
 }
 
 type queryRower interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+type queryer interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }

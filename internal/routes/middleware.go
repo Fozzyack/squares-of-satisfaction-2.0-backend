@@ -28,7 +28,7 @@ func CheckSession(app *app.Application) func(next http.Handler) http.Handler {
 				return
 			}
 
-			session, err := app.SessionStore.GetSessionByToken(cookie.Value)
+			session, err := app.SessionStore.GetSessionByToken(r.Context(), cookie.Value)
 			if err != nil {
 				app.Logger.Error().Err(err).Msg("Check Session: Session not found")
 				api.ErrorJSON(w, "Error: Unauthorized", http.StatusUnauthorized)

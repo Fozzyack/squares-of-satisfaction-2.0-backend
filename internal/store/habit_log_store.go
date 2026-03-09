@@ -9,8 +9,10 @@ import (
 
 type HabitLogStore interface {
 	CreateHabitLog(ctx context.Context, tx *sql.Tx, incrementAmount int, userId, habitId string) (*models.HabitLog, error)
-	GetHabitLogsByHabitId(habitId, userId string) ([]*models.HabitLog, error)
-	GetHabitLogsByUserId(userId string) ([]*models.HabitLog, error)
+	GetHabitLogsByHabitId(ctx context.Context, habitId, userId string) ([]*models.HabitLog, error)
+	GetHabitLogsByHabitIdTx(ctx context.Context, tx *sql.Tx, habitId, userId string) ([]*models.HabitLog, error)
+	GetHabitLogsByUserId(ctx context.Context, userId string) ([]*models.HabitLog, error)
+	GetHabitLogsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) ([]*models.HabitLog, error)
 }
 
 func NewHabitLogStore(db *sql.DB) HabitLogStore {
@@ -39,7 +41,7 @@ func (ps *PostgresStore) CreateHabitLog(ctx context.Context, tx *sql.Tx, increme
 	return habitLog, nil
 }
 
-func (ps *PostgresStore) GetHabitLogsByHabitId(habitId, userId string) ([]*models.HabitLog, error) {
+func (ps *PostgresStore) getHabitLogsByHabitId(ctx context.Context, q queryer, habitId, userId string) ([]*models.HabitLog, error) {
 	query := `
 	SELECT id, increment_amount, habit_id, user_id, created_at
 	FROM habit_entries
@@ -47,7 +49,7 @@ func (ps *PostgresStore) GetHabitLogsByHabitId(habitId, userId string) ([]*model
 	ORDER BY created_at DESC
 	`
 
-	rows, err := ps.db.Query(query, habitId, userId)
+	rows, err := q.QueryContext(ctx, query, habitId, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +80,15 @@ func (ps *PostgresStore) GetHabitLogsByHabitId(habitId, userId string) ([]*model
 	return habitLogs, nil
 }
 
-func (ps *PostgresStore) GetHabitLogsByUserId(userId string) ([]*models.HabitLog, error) {
+func (ps *PostgresStore) GetHabitLogsByHabitId(ctx context.Context, habitId, userId string) ([]*models.HabitLog, error) {
+	return ps.getHabitLogsByHabitId(ctx, ps.db, habitId, userId)
+}
+
+func (ps *PostgresStore) GetHabitLogsByHabitIdTx(ctx context.Context, tx *sql.Tx, habitId, userId string) ([]*models.HabitLog, error) {
+	return ps.getHabitLogsByHabitId(ctx, tx, habitId, userId)
+}
+
+func (ps *PostgresStore) getHabitLogsByUserId(ctx context.Context, q queryer, userId string) ([]*models.HabitLog, error) {
 	query := `
 	SELECT id, increment_amount, habit_id, user_id, created_at
 	FROM habit_entries
@@ -86,7 +96,7 @@ func (ps *PostgresStore) GetHabitLogsByUserId(userId string) ([]*models.HabitLog
 	ORDER BY created_at DESC
 	`
 
-	rows, err := ps.db.Query(query, userId)
+	rows, err := q.QueryContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -115,4 +125,12 @@ func (ps *PostgresStore) GetHabitLogsByUserId(userId string) ([]*models.HabitLog
 	}
 
 	return habitLogs, nil
+}
+
+func (ps *PostgresStore) GetHabitLogsByUserId(ctx context.Context, userId string) ([]*models.HabitLog, error) {
+	return ps.getHabitLogsByUserId(ctx, ps.db, userId)
+}
+
+func (ps *PostgresStore) GetHabitLogsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) ([]*models.HabitLog, error) {
+	return ps.getHabitLogsByUserId(ctx, tx, userId)
 }

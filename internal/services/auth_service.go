@@ -61,7 +61,7 @@ func (as *AuthService) CreateNewUser(ctx context.Context, userReq *models.NewUse
 }
 
 func (as *AuthService) LoginUser(ctx context.Context, loginReq *models.LoginUserRequest) (*models.Session, error) {
-	user, err := as.UserStore.GetUserByEmail(loginReq.Email)
+	user, err := as.UserStore.GetUserByEmail(ctx, loginReq.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrInvalidCredentials

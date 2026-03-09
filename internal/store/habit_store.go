@@ -9,8 +9,9 @@ import (
 
 type HabitStore interface {
 	CreateHabit(ctx context.Context, tx *sql.Tx, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error)
-	GetHabitById(id, userId string) (*models.Habit, error)
-	GetHabitsByUserId(userId string) ([]*models.Habit, error)
+	GetHabitById(ctx context.Context, id, userId string) (*models.Habit, error)
+	GetHabitByIdTx(ctx context.Context, tx *sql.Tx, id, userId string) (*models.Habit, error)
+	GetHabitsByUserId(ctx context.Context, userId string) ([]*models.Habit, error)
 	UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error)
 }
 
@@ -44,7 +45,7 @@ func (ps *PostgresStore) CreateHabit(ctx context.Context, tx *sql.Tx, userId str
 	return newHabit, nil
 }
 
-func (ps *PostgresStore) GetHabitById(id, userId string) (*models.Habit, error) {
+func (ps *PostgresStore) getHabitById(ctx context.Context, q queryRower, id, userId string) (*models.Habit, error) {
 	query := `
 	SELECT id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	FROM habits
@@ -52,7 +53,7 @@ func (ps *PostgresStore) GetHabitById(id, userId string) (*models.Habit, error) 
 	`
 
 	habit := &models.Habit{}
-	err := ps.db.QueryRow(query, id, userId).Scan(
+	err := q.QueryRowContext(ctx, query, id, userId).Scan(
 		&habit.Id,
 		&habit.UserId,
 		&habit.Name,
@@ -70,7 +71,15 @@ func (ps *PostgresStore) GetHabitById(id, userId string) (*models.Habit, error) 
 	return habit, nil
 }
 
-func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, error) {
+func (ps *PostgresStore) GetHabitById(ctx context.Context, id, userId string) (*models.Habit, error) {
+	return ps.getHabitById(ctx, ps.db, id, userId)
+}
+
+func (ps *PostgresStore) GetHabitByIdTx(ctx context.Context, tx *sql.Tx, id, userId string) (*models.Habit, error) {
+	return ps.getHabitById(ctx, tx, id, userId)
+}
+
+func (ps *PostgresStore) GetHabitsByUserId(ctx context.Context, userId string) ([]*models.Habit, error) {
 	query := `
 	SELECT id, user_id, name, goal, increment, color, unit, created_at, updated_at
 	FROM habits
@@ -78,7 +87,7 @@ func (ps *PostgresStore) GetHabitsByUserId(userId string) ([]*models.Habit, erro
 	ORDER BY created_at DESC
 	`
 
-	rows, err := ps.db.Query(query, userId)
+	rows, err := ps.db.QueryContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}
