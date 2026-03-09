@@ -4,8 +4,6 @@ Go API for authentication and habit management.
 
 ![Tiny Wins Landing](./tinywinslanding.png)
 
-![Tiny Wins Demo](./output.gif)
-
 ## Stack
 
 - Go 1.26
