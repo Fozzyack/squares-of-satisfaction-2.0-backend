@@ -23,6 +23,18 @@ func NewHabitHandler(habitService *services.HabitService, logger zerolog.Logger)
 	}
 }
 
+func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	var habitDailyReq *models.RecordHabitRequest
+	err := DecodeJSON(r, &habitDailyReq)
+	if err != nil {
+		hh.Logger.Error().Err(err).Msg("HandleRecordHabit - Could not decode body")
+		ErrorJSON(w, "Could not Create Habit (Bad Request)", http.StatusBadRequest)
+		return
+	}
+}
+
 func (hh *HabitHandler) HandleCreateHabit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value("session").(*models.Session)

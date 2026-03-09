@@ -42,6 +42,8 @@ func NewApplication() (*Application, error) {
 	userStore := store.NewUserStore(pgDB)
 	sessionStore := store.NewSessionStore(pgDB)
 	habitStore := store.NewHabitStore(pgDB)
+	habitDailyTotalsStore := store.NewHabitTotalStore(pgDB)
+	habitLogStore := store.NewHabitLogStore(pgDB)
 
 	// services init
 	txManager := services.NewSQLTxManager(pgDB)

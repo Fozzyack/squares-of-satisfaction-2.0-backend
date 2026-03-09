@@ -9,15 +9,49 @@ import (
 )
 
 type HabitService struct {
-	TxManager  TxManager
-	HabitStore store.HabitStore
+	TxManager            TxManager
+	HabitStore           store.HabitStore
+	HabitDailyTotalStore store.HabitDailyTotalsStore
+	HabitLogStore        store.HabitLogStore
 }
 
-func NewHabitService(txManager TxManager, habitStore store.HabitStore) *HabitService {
+func NewHabitService(txManager TxManager, habitStore store.HabitStore, habitDailyTotalStore store.HabitDailyTotalsStore, habitStoreLog store.HabitLogStore) *HabitService {
 	return &HabitService{
-		TxManager:  txManager,
-		HabitStore: habitStore,
+		TxManager:            txManager,
+		HabitStore:           habitStore,
+		HabitDailyTotalStore: habitDailyTotalStore,
+		HabitLogStore:        habitStoreLog,
 	}
+}
+
+func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTotalReq *models.RecordHabitRequest) (*models.HabitDailyTotal, error) {
+
+	var habitTotal *models.HabitDailyTotal
+	err := hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
+		var err error
+		_, err = hs.HabitLogStore.CreateHabitLog(ctx, tx, habitTotal.Amount, userId, habitTotalReq.HabitId)
+		if err != nil {
+			return err
+		}
+		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotal(habitTotalReq.HabitId, userId, habitTotalReq.Date)
+		if err == sql.ErrNoRows {
+			habitTotal, err = hs.HabitDailyTotalStore.CreateDailyHabitTotal(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, habitTotalReq.Date)
+		} else if err != nil {
+			return err
+		} else {
+			habitTotal.Amount += habitTotalReq.Amount
+			habitTotal, err = hs.HabitDailyTotalStore.UpdateDailyHabitTotal(ctx, tx, habitTotal)
+		}
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return habitTotal, nil
+
 }
 
 func (hs *HabitService) CreateHabit(ctx context.Context, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error) {

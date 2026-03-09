@@ -29,3 +29,9 @@ type UpdateHabitRequest struct {
 	Color     *string `json:"color"`
 	Unit      *string `json:"unit"`
 }
+
+type RecordHabitRequest struct {
+	HabitId string    `json:"habit_id"`
+	Amount  int       `json:"amount"`
+	Date    time.Time `json:"date"`
+}
