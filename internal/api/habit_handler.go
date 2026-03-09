@@ -33,6 +33,15 @@ func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request
 		ErrorJSON(w, "Could not Create Habit (Bad Request)", http.StatusBadRequest)
 		return
 	}
+
+	habitDailyTotal, err := hh.HabitService.RecordHabit(ctx, session.UserId, habitDailyReq)
+	if err != nil {
+		hh.Logger.Error().Err(err).Msg("HandleRecordHabit - Could not update / create total")
+		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, habitDailyTotal)
 }
 
 func (hh *HabitHandler) HandleCreateHabit(w http.ResponseWriter, r *http.Request) {
