@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/Fozzyack/habit-tracker/internal/models"
 	"github.com/Fozzyack/habit-tracker/internal/store"
@@ -25,16 +26,12 @@ func NewHabitService(txManager TxManager, habitStore store.HabitStore, habitDail
 }
 
 func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTotalReq *models.RecordHabitRequest) (*models.HabitDailyTotal, error) {
-
 	var habitTotal *models.HabitDailyTotal
 	err := hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
 		var err error
-		_, err = hs.HabitLogStore.CreateHabitLog(ctx, tx, habitTotal.Amount, userId, habitTotalReq.HabitId)
-		if err != nil {
-			return err
-		}
-		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotal(habitTotalReq.HabitId, userId, habitTotalReq.Date)
-		if err == sql.ErrNoRows {
+
+		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotalInTx(ctx, tx, habitTotalReq.HabitId, userId, habitTotalReq.Date)
+		if errors.Is(err, sql.ErrNoRows) {
 			habitTotal, err = hs.HabitDailyTotalStore.CreateDailyHabitTotal(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, habitTotalReq.Date)
 		} else if err != nil {
 			return err
@@ -45,6 +42,12 @@ func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTot
 		if err != nil {
 			return err
 		}
+
+		_, err = hs.HabitLogStore.CreateHabitLog(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {

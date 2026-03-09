@@ -12,6 +12,7 @@ type HabitDailyTotalsStore interface {
 	CreateDailyHabitTotal(ctx context.Context, tx *sql.Tx, amount int, userId string, habitId string, date time.Time) (*models.HabitDailyTotal, error)
 	UpdateDailyHabitTotal(ctx context.Context, tx *sql.Tx, habitDailyTotal *models.HabitDailyTotal) (*models.HabitDailyTotal, error)
 	GetDailyHabitTotal(habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
+	GetDailyHabitTotalInTx(ctx context.Context, tx *sql.Tx, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
 }
 
 func NewHabitTotalStore(db *sql.DB) HabitDailyTotalsStore {
@@ -77,6 +78,30 @@ func (ps *PostgresStore) GetDailyHabitTotal(habitId, userId string, date time.Ti
 
 	habitDailyTotal := &models.HabitDailyTotal{}
 	err := ps.db.QueryRow(query, habitId, userId, date).Scan(
+		&habitDailyTotal.Id,
+		&habitDailyTotal.Amount,
+		&habitDailyTotal.HabitId,
+		&habitDailyTotal.UserId,
+		&habitDailyTotal.Date,
+		&habitDailyTotal.CreatedAt,
+		&habitDailyTotal.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return habitDailyTotal, nil
+}
+
+func (ps *PostgresStore) GetDailyHabitTotalInTx(ctx context.Context, tx *sql.Tx, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error) {
+	query := `
+	SELECT id, amount, habit_id, user_id, date, created_at, updated_at
+	FROM habit_daily_totals
+	WHERE habit_id = $1 AND user_id = $2 AND date = $3
+	`
+
+	habitDailyTotal := &models.HabitDailyTotal{}
+	err := tx.QueryRowContext(ctx, query, habitId, userId, date).Scan(
 		&habitDailyTotal.Id,
 		&habitDailyTotal.Amount,
 		&habitDailyTotal.HabitId,

@@ -30,7 +30,7 @@ func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request
 	err := DecodeJSON(r, &habitDailyReq)
 	if err != nil {
 		hh.Logger.Error().Err(err).Msg("HandleRecordHabit - Could not decode body")
-		ErrorJSON(w, "Could not Create Habit (Bad Request)", http.StatusBadRequest)
+		ErrorJSON(w, "Could not Record Habit (Bad Request)", http.StatusBadRequest)
 		return
 	}
 
