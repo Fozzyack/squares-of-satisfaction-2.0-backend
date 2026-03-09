@@ -13,6 +13,7 @@ type HabitDailyTotalsStore interface {
 	UpdateDailyHabitTotal(ctx context.Context, tx *sql.Tx, habitDailyTotal *models.HabitDailyTotal) (*models.HabitDailyTotal, error)
 	GetDailyHabitTotal(ctx context.Context, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
 	GetDailyHabitTotalTx(ctx context.Context, tx *sql.Tx, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
+	GetHabitYearDailyCounts(ctx context.Context, habitId, userId string) ([]*models.HabitDailyCount, error)
 }
 
 func NewHabitTotalStore(db *sql.DB) HabitDailyTotalsStore {
@@ -99,4 +100,49 @@ func (ps *PostgresStore) GetDailyHabitTotal(ctx context.Context, habitId, userId
 
 func (ps *PostgresStore) GetDailyHabitTotalTx(ctx context.Context, tx *sql.Tx, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error) {
 	return ps.getDailyHabitTotal(ctx, tx, habitId, userId, date)
+}
+
+func (ps *PostgresStore) GetHabitYearDailyCounts(ctx context.Context, habitId, userId string) ([]*models.HabitDailyCount, error) {
+	query := `
+	WITH days AS (
+		SELECT generate_series(
+			CURRENT_DATE - INTERVAL '364 days',
+			CURRENT_DATE,
+			INTERVAL '1 day'
+		)::date AS day
+	)
+	SELECT d.day, COALESCE(hdt.amount, 0) AS count
+	FROM days d
+	LEFT JOIN habit_daily_totals hdt
+		ON hdt.date = d.day
+		AND hdt.habit_id = $1
+		AND hdt.user_id = $2
+	ORDER BY d.day ASC
+	`
+
+	rows, err := ps.db.QueryContext(ctx, query, habitId, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	dailyCounts := make([]*models.HabitDailyCount, 0)
+	for rows.Next() {
+		var date time.Time
+		dailyCount := &models.HabitDailyCount{}
+		err = rows.Scan(&date, &dailyCount.Count)
+		if err != nil {
+			return nil, err
+		}
+
+		dailyCount.Date = date.Format("2006-01-02")
+		dailyCounts = append(dailyCounts, dailyCount)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return dailyCounts, nil
 }

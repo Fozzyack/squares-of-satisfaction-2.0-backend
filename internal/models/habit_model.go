@@ -31,7 +31,7 @@ type UpdateHabitRequest struct {
 }
 
 type RecordHabitRequest struct {
-	HabitId string    `json:"habit_id"`
-	Amount  int       `json:"amount"`
-	Date    time.Time `json:"date"`
+	HabitId string `json:"habit_id"`
+	Amount  int    `json:"amount"`
+	Date    string `json:"date"`
 }

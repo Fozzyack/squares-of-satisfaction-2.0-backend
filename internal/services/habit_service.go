@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/Fozzyack/habit-tracker/internal/models"
 	"github.com/Fozzyack/habit-tracker/internal/store"
 )
+
+var ErrInvalidRecordHabitDate = errors.New("invalid record habit date")
 
 type HabitService struct {
 	TxManager            TxManager
@@ -26,13 +29,18 @@ func NewHabitService(txManager TxManager, habitStore store.HabitStore, habitDail
 }
 
 func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTotalReq *models.RecordHabitRequest) (*models.HabitDailyTotal, error) {
+	date, err := time.Parse("2006-01-02", habitTotalReq.Date)
+	if err != nil {
+		return nil, ErrInvalidRecordHabitDate
+	}
+
 	var habitTotal *models.HabitDailyTotal
-	err := hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
+	err = hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
 		var err error
 
-		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotalTx(ctx, tx, habitTotalReq.HabitId, userId, habitTotalReq.Date)
+		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotalTx(ctx, tx, habitTotalReq.HabitId, userId, date)
 		if errors.Is(err, sql.ErrNoRows) {
-			habitTotal, err = hs.HabitDailyTotalStore.CreateDailyHabitTotal(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, habitTotalReq.Date)
+			habitTotal, err = hs.HabitDailyTotalStore.CreateDailyHabitTotal(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, date)
 		} else if err != nil {
 			return err
 		} else {
@@ -113,4 +121,18 @@ func (hs *HabitService) GetHabitsByUserId(ctx context.Context, userId string) ([
 	}
 
 	return habits, nil
+}
+
+func (hs *HabitService) GetHabitYearDailyCounts(ctx context.Context, habitId, userId string) ([]*models.HabitDailyCount, error) {
+	_, err := hs.HabitStore.GetHabitById(ctx, habitId, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	dailyCounts, err := hs.HabitDailyTotalStore.GetHabitYearDailyCounts(ctx, habitId, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return dailyCounts, nil
 }

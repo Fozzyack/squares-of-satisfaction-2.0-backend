@@ -26,6 +26,12 @@ func NewHabitHandler(habitService *services.HabitService, logger zerolog.Logger)
 func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value("session").(*models.Session)
+	habitId := chi.URLParam(r, "habitId")
+	if habitId == "" {
+		ErrorJSON(w, "Missing habit id", http.StatusBadRequest)
+		return
+	}
+
 	var habitDailyReq *models.RecordHabitRequest
 	err := DecodeJSON(r, &habitDailyReq)
 	if err != nil {
@@ -34,8 +40,18 @@ func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if habitDailyReq.HabitId != "" && habitDailyReq.HabitId != habitId {
+		ErrorJSON(w, "habit_id in body must match URL parameter", http.StatusBadRequest)
+		return
+	}
+	habitDailyReq.HabitId = habitId
+
 	habitDailyTotal, err := hh.HabitService.RecordHabit(ctx, session.UserId, habitDailyReq)
 	if err != nil {
+		if errors.Is(err, services.ErrInvalidRecordHabitDate) {
+			ErrorJSON(w, "Invalid date format. Use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
 		hh.Logger.Error().Err(err).Msg("HandleRecordHabit - Could not update / create total")
 		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
 		return
@@ -97,6 +113,25 @@ func (hh *HabitHandler) HandleGetHabitById(w http.ResponseWriter, r *http.Reques
 	}
 
 	SendJSON(w, habit)
+}
+
+func (hh *HabitHandler) HandleGetHabitYearDailyCounts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	habitId := chi.URLParam(r, "habitId")
+
+	dailyCounts, err := hh.HabitService.GetHabitYearDailyCounts(ctx, habitId, session.UserId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, "Habit Not Found", http.StatusNotFound)
+			return
+		}
+		hh.Logger.Error().Err(err).Msg("HandleGetHabitYearDailyCounts")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, dailyCounts)
 }
 
 func (hh *HabitHandler) HandleUpdateHabit(w http.ResponseWriter, r *http.Request) {

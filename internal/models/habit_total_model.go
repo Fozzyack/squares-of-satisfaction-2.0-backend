@@ -11,3 +11,8 @@ type HabitDailyTotal struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type HabitDailyCount struct {
+	Date  string `json:"date"`
+	Count int    `json:"count"`
+}
