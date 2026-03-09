@@ -30,7 +30,7 @@ func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTot
 	err := hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
 		var err error
 
-		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotalInTx(ctx, tx, habitTotalReq.HabitId, userId, habitTotalReq.Date)
+		habitTotal, err = hs.HabitDailyTotalStore.GetDailyHabitTotalTx(ctx, tx, habitTotalReq.HabitId, userId, habitTotalReq.Date)
 		if errors.Is(err, sql.ErrNoRows) {
 			habitTotal, err = hs.HabitDailyTotalStore.CreateDailyHabitTotal(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, habitTotalReq.Date)
 		} else if err != nil {
