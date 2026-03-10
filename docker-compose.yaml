@@ -10,8 +10,21 @@ services:
       - 5499:5432
     volumes:
       - habbit_tracker:/var/lib/postgresql
+  db-test:
+    image: postgres:18.3-alpine3.23
+    container_name: habbit_tracker_db_test
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=squares
+    ports:
+      - 5501:5432
+    volumes:
+      - habbit_tracker_test:/var/lib/postgresql
 
 volumes:
   habbit_tracker:
+    driver: local
+  habbit_tracker_test:
     driver: local
 
