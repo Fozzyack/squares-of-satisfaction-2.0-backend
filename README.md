@@ -60,6 +60,21 @@ go run . -port 8801
 - SQL migrations live in `migrations/*.sql`.
 - They are embedded in the binary and executed automatically at startup.
 
+## Seed Data
+
+Run the database seeder:
+
+```bash
+go run ./cmd/seed
+```
+
+This seeds:
+
+- Clears existing DB data first
+- 1 user (`seed@example.com` / `password123`)
+- 1 habit (`Drink Water`)
+- Random `habit_entries` + `habit_daily_totals` for the last 365 days
+
 ## API Overview
 
 Public routes:
