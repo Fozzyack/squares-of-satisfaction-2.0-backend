@@ -134,6 +134,30 @@ func (hh *HabitHandler) HandleGetHabitYearDailyCounts(w http.ResponseWriter, r *
 	SendJSON(w, dailyCounts)
 }
 
+func (hh *HabitHandler) HandleGetHabitLogsByDate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	date := r.URL.Query().Get("date")
+
+	if date == "" {
+		ErrorJSON(w, "Missing date query parameter", http.StatusBadRequest)
+		return
+	}
+
+	logs, err := hh.HabitService.GetHabitLogByDay(ctx, session.UserId, date)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidHabitLogDate) {
+			ErrorJSON(w, "Invalid date format. Use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+		hh.Logger.Error().Err(err).Msg("HandleGetHabitLogsByDate")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, logs)
+}
+
 func (hh *HabitHandler) HandleUpdateHabit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value("session").(*models.Session)

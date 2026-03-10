@@ -103,9 +103,9 @@ func seed(ctx context.Context, db *sql.DB) error {
 
 			logCreatedAt := day.Add(time.Duration(rng.Intn(24))*time.Hour + time.Duration(rng.Intn(60))*time.Minute)
 			_, err = tx.ExecContext(ctx, `
-				INSERT INTO habit_entries (increment_amount, habit_id, user_id, created_at)
-				VALUES ($1, $2, $3, $4)
-			`, incrementAmount, habitID, userID, logCreatedAt)
+				INSERT INTO habit_entries (increment_amount, habit_id, user_id, date, created_at)
+				VALUES ($1, $2, $3, $4, $5)
+			`, incrementAmount, habitID, userID, day, logCreatedAt)
 			if err != nil {
 				return err
 			}

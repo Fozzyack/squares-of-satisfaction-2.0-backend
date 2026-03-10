@@ -11,6 +11,7 @@ import (
 )
 
 var ErrInvalidRecordHabitDate = errors.New("invalid record habit date")
+var ErrInvalidHabitLogDate = errors.New("invalid habit log date")
 
 type HabitService struct {
 	TxManager            TxManager
@@ -51,7 +52,7 @@ func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTot
 			return err
 		}
 
-		_, err = hs.HabitLogStore.CreateHabitLog(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId)
+		_, err = hs.HabitLogStore.CreateHabitLog(ctx, tx, habitTotalReq.Amount, userId, habitTotalReq.HabitId, date)
 		if err != nil {
 			return err
 		}
@@ -94,6 +95,25 @@ func (hs *HabitService) GetHabitById(ctx context.Context, id, userId string) (*m
 	}
 
 	return habit, nil
+}
+
+func (hs *HabitService) GetHabitLogByDay(ctx context.Context, userId, date string) (*[]models.HabitLog, error) {
+	logDate, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return nil, ErrInvalidHabitLogDate
+	}
+
+	logs, err := hs.HabitLogStore.GetHabitLogsByDate(ctx, userId, logDate)
+	if err != nil {
+		return nil, err
+	}
+
+	habitLogs := make([]models.HabitLog, len(logs))
+	for i, log := range logs {
+		habitLogs[i] = *log
+	}
+
+	return &habitLogs, nil
 }
 
 func (hs *HabitService) UpdateHabit(ctx context.Context, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error) {
