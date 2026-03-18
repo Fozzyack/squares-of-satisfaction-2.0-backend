@@ -134,6 +134,32 @@ func (hs *HabitService) UpdateHabit(ctx context.Context, id, userId string, habi
 	return habit, nil
 }
 
+func (hs *HabitService) DeleteHabit(ctx context.Context, id, userId string) error {
+	err := hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
+		err := hs.HabitLogStore.DeleteHabitLogByHabitIdTx(ctx, tx, userId, id)
+		if err != nil {
+			return err
+		}
+
+		err = hs.HabitDailyTotalStore.DeleteDailyHabitTotalsByHabitIdTx(ctx, tx, userId, id)
+		if err != nil {
+			return err
+		}
+
+		err = hs.HabitStore.DeleteHabitTx(ctx, tx, id, userId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (hs *HabitService) GetHabitsByUserId(ctx context.Context, userId string) ([]*models.Habit, error) {
 	habits, err := hs.HabitStore.GetHabitsByUserId(ctx, userId)
 	if err != nil {

@@ -13,6 +13,7 @@ type HabitStore interface {
 	GetHabitByIdTx(ctx context.Context, tx *sql.Tx, id, userId string) (*models.Habit, error)
 	GetHabitsByUserId(ctx context.Context, userId string) ([]*models.Habit, error)
 	UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId string, habitReq *models.UpdateHabitRequest) (*models.Habit, error)
+	DeleteHabitTx(ctx context.Context, tx *sql.Tx, id, userId string) error
 }
 
 func NewHabitStore(db *sql.DB) HabitStore {
@@ -153,4 +154,20 @@ func (ps *PostgresStore) UpdateHabit(ctx context.Context, tx *sql.Tx, id, userId
 	}
 
 	return habit, nil
+}
+
+func (ps *PostgresStore) DeleteHabitTx(ctx context.Context, tx *sql.Tx, id, userId string) error {
+	query := `
+	DELETE FROM habits
+	WHERE id = $1 AND user_id = $2
+	RETURNING id
+	`
+
+	var deletedID string
+	err := tx.QueryRowContext(ctx, query, id, userId).Scan(&deletedID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

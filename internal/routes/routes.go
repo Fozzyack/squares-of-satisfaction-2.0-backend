@@ -44,6 +44,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 		r.Get("/habits/{habitId}", app.HabitHandler.HandleGetHabitById)
 		r.Get("/habits/{habitId}/records", app.HabitHandler.HandleGetHabitYearDailyCounts)
 		r.Put("/habits/{habitId}", app.HabitHandler.HandleUpdateHabit)
+		r.Delete("/habits/{habitId}", app.HabitHandler.HandleDeleteHabit)
 		r.Post("/habits/{habitId}/record", app.HabitHandler.HandleRecordHabit)
 	})
 

@@ -184,3 +184,22 @@ func (hh *HabitHandler) HandleUpdateHabit(w http.ResponseWriter, r *http.Request
 
 	SendJSON(w, habit)
 }
+
+func (hh *HabitHandler) HandleDeleteHabit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	habitId := chi.URLParam(r, "habitId")
+
+	err := hh.HabitService.DeleteHabit(ctx, habitId, session.UserId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, "Habit Not Found", http.StatusNotFound)
+			return
+		}
+		hh.Logger.Error().Err(err).Msg("HandleDeleteHabit - Could not delete habit")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

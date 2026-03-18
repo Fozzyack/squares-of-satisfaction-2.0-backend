@@ -15,10 +15,34 @@ type HabitLogStore interface {
 	GetHabitLogsByHabitIdTx(ctx context.Context, tx *sql.Tx, habitId, userId string) ([]*models.HabitLog, error)
 	GetHabitLogsByUserId(ctx context.Context, userId string) ([]*models.HabitLog, error)
 	GetHabitLogsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) ([]*models.HabitLog, error)
+	DeleteHabitLogByHabitId(ctx context.Context, userId string, habitId string) error
+	DeleteHabitLogByHabitIdTx(ctx context.Context, tx *sql.Tx, userId string, habitId string) error
 }
 
 func NewHabitLogStore(db *sql.DB) HabitLogStore {
 	return &PostgresStore{db: db}
+}
+
+func (ps *PostgresStore) deleteHabitById(ctx context.Context, e execer, userId string, habitId string) error {
+	query := `
+	DELETE FROM habit_entries
+	WHERE user_id = $1 AND habit_id = $2
+	`
+
+	_, err := e.ExecContext(ctx, query, userId, habitId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ps *PostgresStore) DeleteHabitLogByHabitId(ctx context.Context, userId string, habitId string) error {
+	return ps.deleteHabitById(ctx, ps.db, userId, habitId)
+}
+
+func (ps *PostgresStore) DeleteHabitLogByHabitIdTx(ctx context.Context, tx *sql.Tx, userId string, habitId string) error {
+	return ps.deleteHabitById(ctx, tx, userId, habitId)
 }
 
 func (ps *PostgresStore) GetHabitLogsByDate(ctx context.Context, userId string, date time.Time) ([]*models.HabitLog, error) {
