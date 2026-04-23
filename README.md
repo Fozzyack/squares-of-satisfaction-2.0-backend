@@ -69,7 +69,7 @@ go run ./cmd/seed
 This seeds:
 
 - Clears existing DB data first
-- 1 user (`seed@example.com` / `password123`)
+- 1 user (`john@example.com` / `password123`)
 - 1 habit (`Drink Water`)
 - Random `habit_entries` + `habit_daily_totals` for the last 365 days
 
