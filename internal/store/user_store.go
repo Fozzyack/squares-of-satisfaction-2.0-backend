@@ -9,6 +9,7 @@ import (
 
 type UserStore interface {
 	CreateUser(ctx context.Context, tx *sql.Tx, passwordHash string, userReq *models.NewUserRequest) (*models.User, error)
+	UpdateUser(ctx context.Context, tx *sql.Tx, id string, name *string, passwordHash *string) (*models.User, error)
 	GetUserById(ctx context.Context, id string) (*models.User, error)
 	GetUserByIdTx(ctx context.Context, tx *sql.Tx, id string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
@@ -40,6 +41,33 @@ func (ps *PostgresStore) CreateUser(ctx context.Context, tx *sql.Tx, passwordHas
 	}
 
 	return newUser, nil
+}
+
+func (ps *PostgresStore) UpdateUser(ctx context.Context, tx *sql.Tx, id string, name *string, passwordHash *string) (*models.User, error) {
+	query := `
+	UPDATE users
+	SET
+		name = COALESCE($2, name),
+		password_hash = COALESCE($3, password_hash),
+		updated_at = NOW()
+	WHERE id = $1
+	RETURNING id, email, password_hash, name, created_at, updated_at
+	`
+
+	updatedUser := &models.User{}
+	err := tx.QueryRowContext(ctx, query, id, name, passwordHash).Scan(
+		&updatedUser.Id,
+		&updatedUser.Email,
+		&updatedUser.PasswordHash,
+		&updatedUser.Name,
+		&updatedUser.CreatedAt,
+		&updatedUser.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedUser, nil
 }
 
 func (ps *PostgresStore) getUserById(ctx context.Context, q queryRower, id string) (*models.User, error) {

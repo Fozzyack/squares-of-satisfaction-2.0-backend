@@ -84,6 +84,7 @@ Public routes:
 Session-protected routes:
 
 - `GET /users` (current user)
+- `PUT /users` (update name and/or password; requires current password)
 - `POST /habits`
 - `GET /habits`
 - `GET /habits/{habitId}`

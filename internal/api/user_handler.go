@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 
@@ -32,6 +33,38 @@ func (uh *UserHandler) HandleGetUserBySession(w http.ResponseWriter, r *http.Req
 	}
 
 	SendJSON(w, map[string]string{"name": user.Name, "email": user.Email})
+}
+
+func (uh *UserHandler) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+
+	var userReq *models.UpdateUserRequest
+	err := DecodeJSON(r, &userReq)
+	if err != nil || userReq == nil || userReq.CurrentPassword == "" {
+		if err != nil {
+			uh.Logger.Error().Err(err).Msg("HandleUpdateUser - Could not decode body")
+		}
+		ErrorJSON(w, "Could not Update User (Bad Request)", http.StatusBadRequest)
+		return
+	}
+
+	user, err := uh.AuthService.UpdateUser(ctx, session.UserId, userReq)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			ErrorJSON(w, "Incorrect Current Password", http.StatusUnauthorized)
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, "User Not Found", http.StatusNotFound)
+			return
+		}
+		uh.Logger.Error().Err(err).Msg("HandleUpdateUser - Could not update user")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, user)
 }
 
 func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {

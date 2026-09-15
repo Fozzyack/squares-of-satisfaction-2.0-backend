@@ -166,6 +166,86 @@ func TestAuthServiceLoginUserTestCases(t *testing.T) {
 	}
 }
 
+func TestAuthServiceUpdateUserTestCases(t *testing.T) {
+	db, err := SetupTestDB()
+	require.NoError(t, err)
+	defer db.Close()
+
+	authService := newAuthService(db)
+
+	testCases := []struct {
+		name        string
+		newName     string
+		newPassword string
+		currentPass string
+		expectedErr error
+	}{
+		{
+			name:        "updates name",
+			newName:     "updated-user",
+			currentPass: "password123",
+		},
+		{
+			name:        "updates password",
+			newPassword: "new-password",
+			currentPass: "password123",
+		},
+		{
+			name:        "updates name and password",
+			newName:     "updated-user",
+			newPassword: "new-password",
+			currentPass: "password123",
+		},
+		{
+			name:        "wrong current password returns invalid credentials",
+			newName:     "updated-user",
+			currentPass: "wrong-password",
+			expectedErr: services.ErrInvalidCredentials,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			truncateAuthTables(t, db)
+			user, _, err := authService.CreateNewUser(context.Background(), &models.NewUserRequest{
+				Name:     "original-user",
+				Email:    "update-user@example.com",
+				Password: "password123",
+			})
+			require.NoError(t, err)
+
+			request := &models.UpdateUserRequest{CurrentPassword: tc.currentPass}
+			if tc.newName != "" {
+				request.Name = &tc.newName
+			}
+			if tc.newPassword != "" {
+				request.NewPassword = &tc.newPassword
+			}
+
+			updatedUser, err := authService.UpdateUser(context.Background(), user.Id, request)
+
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
+				assert.Nil(t, updatedUser)
+				return
+			}
+
+			assert.NoError(t, err)
+			require.NotNil(t, updatedUser)
+			if tc.newName != "" {
+				assert.Equal(t, tc.newName, updatedUser.Name)
+			}
+			if tc.newPassword != "" {
+				_, err = authService.LoginUser(context.Background(), &models.LoginUserRequest{
+					Email:    "update-user@example.com",
+					Password: tc.newPassword,
+				})
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func mustGetUserEmailByID(t *testing.T, db *sql.DB, userID string) string {
 	t.Helper()
 

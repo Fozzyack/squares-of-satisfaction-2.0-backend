@@ -32,7 +32,7 @@ func main() {
 	if env.GetProduction() {
 		environment = "PRODUCTION"
 	}
-	app.Logger.Info().Str("Env", fmt.Sprintf(environment)).Msg("Env")
+	app.Logger.Info().Str("Env", environment).Msg("Env")
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),

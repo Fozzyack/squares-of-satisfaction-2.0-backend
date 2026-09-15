@@ -96,3 +96,38 @@ func (as *AuthService) LoginUser(ctx context.Context, loginReq *models.LoginUser
 
 	return session, nil
 }
+
+func (as *AuthService) UpdateUser(ctx context.Context, userId string, userReq *models.UpdateUserRequest) (*models.User, error) {
+	user, err := as.UserStore.GetUserById(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = auth.VerifyPassword(user.PasswordHash, userReq.CurrentPassword)
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, err
+	}
+
+	var passwordHash *string
+	if userReq.NewPassword != nil {
+		hash, err := auth.HashPassword(*userReq.NewPassword)
+		if err != nil {
+			return nil, err
+		}
+		passwordHash = &hash
+	}
+
+	var updatedUser *models.User
+	err = as.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
+		updatedUser, err = as.UserStore.UpdateUser(ctx, tx, userId, userReq.Name, passwordHash)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedUser, nil
+}
