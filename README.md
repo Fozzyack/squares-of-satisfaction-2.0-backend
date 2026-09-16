@@ -33,13 +33,13 @@ Main variables:
 
 ## Run Locally
 
-1) Start Postgres:
+1. Start Postgres:
 
 ```bash
 docker compose up -d
 ```
 
-2) Start the API:
+2. Start the API:
 
 ```bash
 go run .

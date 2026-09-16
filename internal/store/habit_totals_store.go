@@ -10,6 +10,7 @@ import (
 
 type HabitDailyTotalsStore interface {
 	CreateDailyHabitTotal(ctx context.Context, tx *sql.Tx, amount int, userId string, habitId string, date time.Time) (*models.HabitDailyTotal, error)
+	DecrementDailyHabitTotalTx(ctx context.Context, tx *sql.Tx, amount int, userId string, habitId string, date time.Time) (*models.HabitDailyTotal, error)
 	UpdateDailyHabitTotal(ctx context.Context, tx *sql.Tx, habitDailyTotal *models.HabitDailyTotal) (*models.HabitDailyTotal, error)
 	GetDailyHabitTotal(ctx context.Context, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
 	GetDailyHabitTotalTx(ctx context.Context, tx *sql.Tx, habitId, userId string, date time.Time) (*models.HabitDailyTotal, error)
@@ -65,6 +66,31 @@ func (ps *PostgresStore) CreateDailyHabitTotal(ctx context.Context, tx *sql.Tx, 
 		return nil, err
 	}
 	return dbHabitDailyTotal, nil
+}
+
+func (ps *PostgresStore) DecrementDailyHabitTotalTx(ctx context.Context, tx *sql.Tx, amount int, userId string, habitId string, date time.Time) (*models.HabitDailyTotal, error) {
+	query := `
+	UPDATE habit_daily_totals
+	SET amount = amount - $1, updated_at = NOW()
+	WHERE habit_id = $2 AND user_id = $3 AND date = $4
+	RETURNING id, amount, habit_id, user_id, date, created_at, updated_at
+	`
+
+	total := &models.HabitDailyTotal{}
+	err := tx.QueryRowContext(ctx, query, amount, habitId, userId, date).Scan(
+		&total.Id,
+		&total.Amount,
+		&total.HabitId,
+		&total.UserId,
+		&total.Date,
+		&total.CreatedAt,
+		&total.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return total, nil
 }
 
 func (ps *PostgresStore) UpdateDailyHabitTotal(ctx context.Context, tx *sql.Tx, habitDailyTotal *models.HabitDailyTotal) (*models.HabitDailyTotal, error) {

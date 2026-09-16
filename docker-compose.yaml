@@ -27,4 +27,3 @@ volumes:
     driver: local
   habbit_tracker_test:
     driver: local
-

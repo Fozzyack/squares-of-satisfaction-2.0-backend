@@ -66,6 +66,29 @@ func (hs *HabitService) RecordHabit(ctx context.Context, userId string, habitTot
 
 }
 
+func (hs *HabitService) UndoHabit(ctx context.Context, userId, habitId, dateString string) (*models.HabitDailyTotal, error) {
+	date, err := time.Parse("2006-01-02", dateString)
+	if err != nil {
+		return nil, ErrInvalidRecordHabitDate
+	}
+
+	var habitTotal *models.HabitDailyTotal
+	err = hs.TxManager.WithTx(ctx, func(tx *sql.Tx) error {
+		amount, err := hs.HabitLogStore.DeleteLatestHabitLogTx(ctx, tx, userId, habitId, date)
+		if err != nil {
+			return err
+		}
+
+		habitTotal, err = hs.HabitDailyTotalStore.DecrementDailyHabitTotalTx(ctx, tx, amount, userId, habitId, date)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return habitTotal, nil
+}
+
 func (hs *HabitService) CreateHabit(ctx context.Context, userId string, habitReq *models.NewHabitRequest) (*models.Habit, error) {
 	if habitReq.Increment == 0 {
 		habitReq.Increment = 1

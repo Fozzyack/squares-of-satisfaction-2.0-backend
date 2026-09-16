@@ -5,8 +5,6 @@ import (
 	"database/sql"
 )
 
-
-
 type TxManager interface {
 	WithTx(ctx context.Context, fn func(tx *sql.Tx) error) error
 }
@@ -34,14 +32,13 @@ func (stm *SQLTxManager) WithTx(ctx context.Context, fn func(tx *sql.Tx) error) 
 
 	err = fn(tx)
 	if err != nil {
-		return err 
+		return err
 	}
 
-	err = tx.Commit() 
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-

@@ -10,6 +10,7 @@ import (
 
 type HabitLogStore interface {
 	CreateHabitLog(ctx context.Context, tx *sql.Tx, incrementAmount int, userId, habitId string, date time.Time) (*models.HabitLog, error)
+	DeleteLatestHabitLogTx(ctx context.Context, tx *sql.Tx, userId, habitId string, date time.Time) (int, error)
 	GetHabitLogsByDate(ctx context.Context, userId string, date time.Time) ([]*models.HabitLog, error)
 	GetHabitLogsByHabitId(ctx context.Context, habitId, userId string) ([]*models.HabitLog, error)
 	GetHabitLogsByHabitIdTx(ctx context.Context, tx *sql.Tx, habitId, userId string) ([]*models.HabitLog, error)
@@ -108,6 +109,24 @@ func (ps *PostgresStore) CreateHabitLog(ctx context.Context, tx *sql.Tx, increme
 	habitLog.Date = logDate.Format("2006-01-02")
 
 	return habitLog, nil
+}
+
+func (ps *PostgresStore) DeleteLatestHabitLogTx(ctx context.Context, tx *sql.Tx, userId, habitId string, date time.Time) (int, error) {
+	query := `
+	DELETE FROM habit_entries
+	WHERE id = (
+		SELECT id
+		FROM habit_entries
+		WHERE user_id = $1 AND habit_id = $2 AND date = $3
+		ORDER BY created_at DESC, id DESC
+		LIMIT 1
+	)
+	RETURNING increment_amount
+	`
+
+	var amount int
+	err := tx.QueryRowContext(ctx, query, userId, habitId, date).Scan(&amount)
+	return amount, err
 }
 
 func (ps *PostgresStore) getHabitLogsByHabitId(ctx context.Context, q queryer, habitId, userId string) ([]*models.HabitLog, error) {

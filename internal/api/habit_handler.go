@@ -60,6 +60,34 @@ func (hh *HabitHandler) HandleRecordHabit(w http.ResponseWriter, r *http.Request
 	SendJSON(w, habitDailyTotal)
 }
 
+func (hh *HabitHandler) HandleUndoHabit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+	habitId := chi.URLParam(r, "habitId")
+	date := r.URL.Query().Get("date")
+	if habitId == "" || date == "" {
+		ErrorJSON(w, "Missing habit id or date", http.StatusBadRequest)
+		return
+	}
+
+	habitDailyTotal, err := hh.HabitService.UndoHabit(ctx, session.UserId, habitId, date)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidRecordHabitDate) {
+			ErrorJSON(w, "Invalid date format. Use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, "No record to undo", http.StatusNotFound)
+			return
+		}
+		hh.Logger.Error().Err(err).Msg("HandleUndoHabit - Could not undo record")
+		ErrorJSON(w, "Error: Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	SendJSON(w, habitDailyTotal)
+}
+
 func (hh *HabitHandler) HandleCreateHabit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value("session").(*models.Session)
