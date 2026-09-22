@@ -49,9 +49,10 @@ func NewApplication() (*Application, error) {
 	txManager := services.NewSQLTxManager(pgDB)
 	authService := services.NewAuthService(txManager, userStore, sessionStore)
 	habitService := services.NewHabitService(txManager, habitStore, habitDailyTotalsStore, habitLogStore)
+	userService := services.NewUserService(txManager, userStore, sessionStore, habitStore, habitDailyTotalsStore, habitLogStore)
 
 	// handler init
-	userHandler := api.NewUserHandler(authService, logger)
+	userHandler := api.NewUserHandler(authService, userService, logger)
 	habitHandler := api.NewHabitHandler(habitService, logger)
 
 	app := &Application{

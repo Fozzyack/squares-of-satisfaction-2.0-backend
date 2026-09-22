@@ -13,12 +13,14 @@ import (
 type UserHandler struct {
 	Logger      zerolog.Logger
 	AuthService *services.AuthService
+	UserService *services.UserService
 }
 
-func NewUserHandler(authService *services.AuthService, logger zerolog.Logger) *UserHandler {
+func NewUserHandler(authService *services.AuthService, userService *services.UserService, logger zerolog.Logger) *UserHandler {
 	return &UserHandler{
 		Logger:      logger,
 		AuthService: authService,
+		UserService: userService,
 	}
 }
 
@@ -65,6 +67,32 @@ func (uh *UserHandler) HandleUpdateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	SendJSON(w, user)
+}
+
+func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	session := ctx.Value("session").(*models.Session)
+
+	err := uh.UserService.DeleteUser(ctx, session.UserId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, "User Not Found", http.StatusNotFound)
+			return
+		}
+		uh.Logger.Error().Err(err).Msg("HandleDeleteUser - Could not delete user")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	cookie, err := DeleteCookie()
+	if err != nil {
+		uh.Logger.Error().Err(err).Msg("HandleDeleteUser - cookie name")
+		ErrorJSON(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, cookie)
+
+	SendJSON(w, map[string]string{"msg": "success"})
 }
 
 func (uh *UserHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) {

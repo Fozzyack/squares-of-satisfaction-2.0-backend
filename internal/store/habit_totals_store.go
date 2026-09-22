@@ -17,6 +17,7 @@ type HabitDailyTotalsStore interface {
 	GetHabitYearDailyCounts(ctx context.Context, habitId, userId string) ([]*models.HabitDailyCount, error)
 	DeleteDailyHabitTotalsByHabitId(ctx context.Context, userId string, habitId string) error
 	DeleteDailyHabitTotalsByHabitIdTx(ctx context.Context, tx *sql.Tx, userId string, habitId string) error
+	DeleteDailyHabitTotalsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) error
 }
 
 func NewHabitTotalStore(db *sql.DB) HabitDailyTotalsStore {
@@ -43,6 +44,20 @@ func (ps *PostgresStore) DeleteDailyHabitTotalsByHabitId(ctx context.Context, us
 
 func (ps *PostgresStore) DeleteDailyHabitTotalsByHabitIdTx(ctx context.Context, tx *sql.Tx, userId string, habitId string) error {
 	return ps.deleteDailyHabitTotalsByHabitId(ctx, tx, userId, habitId)
+}
+
+func (ps *PostgresStore) DeleteDailyHabitTotalsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) error {
+	query := `
+	DELETE FROM habit_daily_totals
+	WHERE user_id = $1
+	`
+
+	_, err := tx.ExecContext(ctx, query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ps *PostgresStore) CreateDailyHabitTotal(ctx context.Context, tx *sql.Tx, amount int, userId string, habitId string, date time.Time) (*models.HabitDailyTotal, error) {

@@ -39,6 +39,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 		r.Use(CheckSession(app))
 		r.Get("/users", app.UserHandler.HandleGetUserBySession)
 		r.Put("/users", app.UserHandler.HandleUpdateUser)
+		r.Delete("/users", app.UserHandler.HandleDeleteUser)
 		r.Post("/habits", app.HabitHandler.HandleCreateHabit)
 		r.Get("/habits", app.HabitHandler.HandleGetHabitsBySession)
 		r.Get("/habits/logs", app.HabitHandler.HandleGetHabitLogsByDate)

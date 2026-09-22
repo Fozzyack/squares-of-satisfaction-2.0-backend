@@ -10,6 +10,7 @@ import (
 
 type SessionStore interface {
 	CreateSession(ctx context.Context, tx *sql.Tx, userId, token string, expiresAt time.Time) (*models.Session, error)
+	DeleteSessionsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) error
 	GetSessionById(ctx context.Context, id string) (*models.Session, error)
 	GetSessionByIdTx(ctx context.Context, tx *sql.Tx, id string) (*models.Session, error)
 	GetSessionByToken(ctx context.Context, token string) (*models.Session, error)
@@ -40,6 +41,20 @@ func (ps *PostgresStore) CreateSession(ctx context.Context, tx *sql.Tx, userId, 
 	}
 
 	return newSession, nil
+}
+
+func (ps *PostgresStore) DeleteSessionsByUserIdTx(ctx context.Context, tx *sql.Tx, userId string) error {
+	query := `
+	DELETE FROM sessions
+	WHERE user_id = $1
+	`
+
+	_, err := tx.ExecContext(ctx, query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ps *PostgresStore) getSessionById(ctx context.Context, q queryRower, id string) (*models.Session, error) {

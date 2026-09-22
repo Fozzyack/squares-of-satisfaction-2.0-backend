@@ -10,6 +10,7 @@ import (
 type UserStore interface {
 	CreateUser(ctx context.Context, tx *sql.Tx, passwordHash string, userReq *models.NewUserRequest) (*models.User, error)
 	UpdateUser(ctx context.Context, tx *sql.Tx, id string, name *string, passwordHash *string) (*models.User, error)
+	DeleteUserTx(ctx context.Context, tx *sql.Tx, id string) error
 	GetUserById(ctx context.Context, id string) (*models.User, error)
 	GetUserByIdTx(ctx context.Context, tx *sql.Tx, id string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
@@ -68,6 +69,22 @@ func (ps *PostgresStore) UpdateUser(ctx context.Context, tx *sql.Tx, id string, 
 	}
 
 	return updatedUser, nil
+}
+
+func (ps *PostgresStore) DeleteUserTx(ctx context.Context, tx *sql.Tx, id string) error {
+	query := `
+	DELETE FROM users
+	WHERE id = $1
+	RETURNING id
+	`
+
+	var deletedID string
+	err := tx.QueryRowContext(ctx, query, id).Scan(&deletedID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ps *PostgresStore) getUserById(ctx context.Context, q queryRower, id string) (*models.User, error) {

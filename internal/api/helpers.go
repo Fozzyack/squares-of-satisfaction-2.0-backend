@@ -27,6 +27,26 @@ func DecodeJSON(r *http.Request, out interface{}) error {
 	return nil
 }
 
+func DeleteCookie() (*http.Cookie, error) {
+	cookieName, err := env.GetCookieName()
+	if err != nil {
+		return nil, err
+	}
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Secure:   false,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	}
+	if env.GetProduction() {
+		cookie.Secure = true
+	}
+	return cookie, nil
+}
+
 func CreateCookie(value string, expires_at time.Time) (*http.Cookie, error) {
 	cookieName, err := env.GetCookieName()
 	if err != nil {
