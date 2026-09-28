@@ -1,3 +1,5 @@
+# [DEPRECATED] Has moved to another repo
+
 # Backend
 
 Go API for authentication and habit management.
